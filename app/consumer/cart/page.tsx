@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -10,12 +10,55 @@ import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/components/ui/use-toast"
 import { useStore } from "@/lib/store"
 import { Bell, ChevronLeft, Home, Leaf, LogOut, Minus, Plus, Settings, ShoppingCart, Trash, User } from "lucide-react"
+import { auth } from "@/lib/firebase"
+import { signOut, getAuth, onAuthStateChanged } from "firebase/auth"
 
 export default function CartPage() {
-  const router = useRouter()
+  
   const { toast } = useToast()
   const { cart, updateCartItemQuantity, removeFromCart, clearCart } = useStore()
   const [isCheckingOut, setIsCheckingOut] = useState(false)
+  const [activeTab, setActiveTab] = useState("discover")
+    const router = useRouter()
+  
+  const handleLogout = async () => {
+    try {
+      await signOut(auth)
+      router.push("/auth/login") // Redirect user after logout
+    } catch (error) {
+      console.error("Error signing out:", error)
+      // Optional: Toast or alert
+    }
+  }
+  const useCurrentUser = () => {
+    const [user, setUser] = useState<any>(null);
+    const auth = getAuth();
+  
+    useEffect(() => {
+      const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+        if (firebaseUser) {
+          setUser({
+            uid: firebaseUser.uid,
+            id: firebaseUser.uid,
+            name: firebaseUser.displayName || null,
+            email: firebaseUser.email || null,
+            image: firebaseUser.photoURL || null,
+          });
+        } else {
+          setUser(null);
+        }
+      });
+  
+      return () => unsubscribe();
+    }, [auth]);
+  
+    return user;
+  };
+  
+  const user = useCurrentUser();
+  
+  const userId = user?.uid;
+  
 
   // Calculate totals
   const subtotal = cart.reduce((total, item) => total + item.price * item.quantity, 0)
@@ -80,29 +123,67 @@ export default function CartPage() {
           </div>
         </nav>
         <div className="border-t p-4">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-              <User className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-sm font-medium">Priya Sharma</p>
-              <p className="text-xs text-gray-500">Delhi, India</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Link href="/consumer/settings">
-              <Button variant="outline" size="sm" className="w-full">
-                <Settings className="mr-2 h-4 w-4" />
-                Settings
-              </Button>
-            </Link>
-            <Link href="/auth/logout">
-              <Button variant="outline" size="sm">
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
+  <div className="flex items-center gap-4 mb-4">
+    <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+      {user?.photoURL ? (
+        <img src={user.photoURL} alt="User" className="h-10 w-10 rounded-full" />
+      ) : (
+        <span className="text-sm font-semibold">
+          {user?.displayName?.[0] || user?.email?.[0] || "U"}
+        </span>
+      )}
+    </div>
+    <div>
+      <p className="text-sm font-medium">
+        {user?.displayName || user?.email || "Unknown User"}
+      </p>
+      {/* {!editingLocation ? (
+        <p className="text-xs text-gray-500">
+          {location || (
+            <button
+              className="text-blue-500 underline"
+              onClick={() => setEditingLocation(true)}
+            >
+              Add Location
+            </button>
+          )}
+        </p>
+      ) : (
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={newLocation}
+            onChange={(e) => setNewLocation(e.target.value)}
+            placeholder="Enter city"
+            className="text-xs border px-2 py-1 rounded"
+          />
+          <button
+            onClick={saveLocation}
+            className="text-blue-600 text-xs underline"
+          >
+            Save
+          </button>
         </div>
+      )} */}
+    </div>
+  </div>
+  <div className="flex items-center gap-2">
+    <Link href="/consumer/settings">
+      <Button variant="outline" size="sm" className="w-full">
+        <Settings className="mr-2 h-4 w-4" />
+        Settings
+      </Button>
+    </Link>
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={handleLogout}
+      className="text-red-600 hover:bg-red-100"
+    >
+      <LogOut className="h-4 w-4" />
+    </Button>
+  </div>
+</div>
       </aside>
 
       {/* Main content */}

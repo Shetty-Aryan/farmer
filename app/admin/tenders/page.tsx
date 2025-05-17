@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { useRouter } from 'next/navigation'
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -24,6 +25,8 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { auth } from "@/lib/firebase"
+import { signOut, getAuth, onAuthStateChanged } from "firebase/auth"
 
 // Sample data
 const tenders = [
@@ -201,6 +204,45 @@ const tenders = [
 ]
 
 export default function TendersPage() {
+      const router = useRouter();
+    
+      const handleLogout = async () => {
+        try {
+          await signOut(auth);
+          router.push("/auth/login"); // Redirect user after logout
+        } catch (error) {
+          console.error("Error signing out:", error);
+          // Optional: Toast or alert
+        }
+      };
+      const useCurrentUser = () => {
+        const [user, setUser] = useState<any>(null);
+        const auth = getAuth();
+      
+        useEffect(() => {
+          const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+            if (firebaseUser) {
+              setUser({
+                uid: firebaseUser.uid,
+                id: firebaseUser.uid,
+                name: firebaseUser.displayName || null,
+                email: firebaseUser.email || null,
+                image: firebaseUser.photoURL || null,
+              });
+            } else {
+              setUser(null);
+            }
+          });
+      
+          return () => unsubscribe();
+        }, [auth]);
+      
+        return user;
+      };
+      const [activeTab, setActiveTab] = useState("overview")
+      const user = useCurrentUser();
+    
+    const userId = user?.uid;
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [regionFilter, setRegionFilter] = useState("all")
@@ -286,29 +328,67 @@ export default function TendersPage() {
           </div>
         </nav>
         <div className="border-t p-4">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-              <User className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-sm font-medium">Amit Verma</p>
-              <p className="text-xs text-gray-500">Government Admin</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Link href="/admin/settings">
-              <Button variant="outline" size="sm" className="w-full">
-                <Settings className="mr-2 h-4 w-4" />
-                Settings
-              </Button>
-            </Link>
-            <Link href="/auth/logout">
-              <Button variant="outline" size="sm">
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
+  <div className="flex items-center gap-4 mb-4">
+    <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+      {user?.photoURL ? (
+        <img src={user.photoURL} alt="User" className="h-10 w-10 rounded-full" />
+      ) : (
+        <span className="text-sm font-semibold">
+          {user?.displayName?.[0] || user?.email?.[0] || "U"}
+        </span>
+      )}
+    </div>
+    <div>
+      <p className="text-sm font-medium">
+        {user?.displayName || user?.email || "Unknown User"}
+      </p>
+      {/* {!editingLocation ? (
+        <p className="text-xs text-gray-500">
+          {location || (
+            <button
+              className="text-blue-500 underline"
+              onClick={() => setEditingLocation(true)}
+            >
+              Add Location
+            </button>
+          )}
+        </p>
+      ) : (
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={newLocation}
+            onChange={(e) => setNewLocation(e.target.value)}
+            placeholder="Enter city"
+            className="text-xs border px-2 py-1 rounded"
+          />
+          <button
+            onClick={saveLocation}
+            className="text-blue-600 text-xs underline"
+          >
+            Save
+          </button>
         </div>
+      )} */}
+    </div>
+  </div>
+  <div className="flex items-center gap-2">
+    <Link href="/consumer/settings">
+      <Button variant="outline" size="sm" className="w-full">
+        <Settings className="mr-2 h-4 w-4" />
+        Settings
+      </Button>
+    </Link>
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={handleLogout}
+      className="text-red-600 hover:bg-red-100"
+    >
+      <LogOut className="h-4 w-4" />
+    </Button>
+  </div>
+</div>
       </aside>
 
       {/* Main content */}
