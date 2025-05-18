@@ -11,7 +11,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
+  // Legend,
 } from "@/components/ui/chart"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
@@ -230,7 +230,7 @@ export default function FarmerSales() {
                   <XAxis dataKey="week" />
                   <YAxis />
                   <Tooltip formatter={(value) => [`₹${value}`, "Revenue"]} labelFormatter={(label) => `${label}`} />
-                  <Legend />
+                  {/* <Legend /> */}
                   <Line type="monotone" dataKey="amount" stroke="#8884d8" name="Revenue" activeDot={{ r: 8 }} />
                 </LineChart>
               </ResponsiveContainer>
@@ -254,7 +254,7 @@ export default function FarmerSales() {
                     formatter={(value) => [`₹${value}`, "Revenue"]}
                     labelFormatter={(label) => `Product: ${label}`}
                   />
-                  <Legend />
+                  {/* <Legend /> */}
                   <Bar dataKey="value" fill="#22c55e" name="Revenue" />
                 </BarChart>
               </ResponsiveContainer>

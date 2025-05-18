@@ -134,7 +134,7 @@ export default function FarmerTendersPage() {
   })
 
   // Handle selecting a tender for bidding
-  const handleSelectTender = (tender) => {
+  const handleSelectTender = (tender: { id?: string; title?: string; description?: string; product?: string; quantity?: string; budget?: string; deadline?: string; status?: string; region?: string; minPrice: any; maxPrice?: number; requirements?: string }) => {
     setSelectedTender(tender)
     setBidDetails({
       quantity: "",
@@ -145,13 +145,13 @@ export default function FarmerTendersPage() {
   }
 
   // Handle bid form input changes
-  const handleBidInputChange = (e) => {
+  const handleBidInputChange = (e: { target: { name: any; value: any } }) => {
     const { name, value } = e.target
     setBidDetails((prev) => ({ ...prev, [name]: value }))
   }
 
   // Handle bid submission
-  const handleBidSubmit = (e) => {
+  const handleBidSubmit = (e: { preventDefault: () => void }) => {
     e.preventDefault()
     setIsSubmitting(true)
 
@@ -325,7 +325,12 @@ export default function FarmerTendersPage() {
               <FileText className="h-12 w-12 text-gray-300 mb-4" />
               <h2 className="text-xl font-medium mb-2">No bids yet</h2>
               <p className="text-gray-500 mb-6">You haven't applied for any tenders yet</p>
-              <Button onClick={() => document.querySelector('button[value="available"]')?.click()}>
+              <Button
+                onClick={() => {
+                  const button = document.querySelector('button[value="available"]') as HTMLButtonElement | null;
+                  button?.click();
+                }}
+              >
                 Browse Tenders
               </Button>
             </div>

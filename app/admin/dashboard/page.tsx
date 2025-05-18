@@ -1,5 +1,5 @@
 "use client"
-import { useRouter } from 'next/navigation'
+import { useRouter } from "next/navigation"
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
@@ -18,20 +18,7 @@ import {
   Pie,
   Cell,
 } from "@/components/ui/chart"
-import {
-  Bell,
-  Building,
-  FileText,
-  Home,
-  Leaf,
-  LogOut,
-  Settings,
-  ShieldCheck,
-  Store,
-  Truck,
-  User,
-  Users,
-} from "lucide-react"
+import { Building, FileText, Home, LogOut, Settings, ShieldCheck, Store, Truck, Database } from "lucide-react"
 import { auth } from "@/lib/firebase"
 import { signOut, getAuth, onAuthStateChanged } from "firebase/auth"
 
@@ -110,45 +97,45 @@ const supplyChainEvents = [
 ]
 
 export default function AdminDashboard() {
-    const router = useRouter();
-  
-    const handleLogout = async () => {
-      try {
-        await signOut(auth);
-        router.push("/auth/login"); // Redirect user after logout
-      } catch (error) {
-        console.error("Error signing out:", error);
-        // Optional: Toast or alert
-      }
-    };
-    const useCurrentUser = () => {
-      const [user, setUser] = useState<any>(null);
-      const auth = getAuth();
-    
-      useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-          if (firebaseUser) {
-            setUser({
-              uid: firebaseUser.uid,
-              id: firebaseUser.uid,
-              name: firebaseUser.displayName || null,
-              email: firebaseUser.email || null,
-              image: firebaseUser.photoURL || null,
-            });
-          } else {
-            setUser(null);
-          }
-        });
-    
-        return () => unsubscribe();
-      }, [auth]);
-    
-      return user;
-    };
-    const [activeTab, setActiveTab] = useState("overview")
-    const user = useCurrentUser();
-  
-  const userId = user?.uid;
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth)
+      router.push("/auth/login") // Redirect user after logout
+    } catch (error) {
+      console.error("Error signing out:", error)
+      // Optional: Toast or alert
+    }
+  }
+  const useCurrentUser = () => {
+    const [user, setUser] = useState<any>(null)
+    const auth = getAuth()
+
+    useEffect(() => {
+      const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+        if (firebaseUser) {
+          setUser({
+            uid: firebaseUser.uid,
+            id: firebaseUser.uid,
+            name: firebaseUser.displayName || null,
+            email: firebaseUser.email || null,
+            image: firebaseUser.photoURL || null,
+          })
+        } else {
+          setUser(null)
+        }
+      })
+
+      return () => unsubscribe()
+    }, [auth])
+
+    return user
+  }
+  const [activeTab, setActiveTab] = useState("overview")
+  const user = useCurrentUser()
+
+  const userId = user?.uid
 
   return (
     <div className="flex min-h-screen">
@@ -188,26 +175,9 @@ export default function AdminDashboard() {
                   Ration Shops
                 </Button>
               </Link>
-            </div>
-          </div>
-          <div className="px-4 py-2">
-            <h2 className="mb-2 text-xs font-semibold tracking-tight">Management</h2>
-            <div className="space-y-1">
-              <Link href="/admin/farmers">
+              <Link href="/admin/public-ledger">
                 <Button variant="ghost" className="w-full justify-start">
-                  <Leaf className="mr-2 h-4 w-4" />
-                  Farmers
-                </Button>
-              </Link>
-              <Link href="/admin/consumers">
-                <Button variant="ghost" className="w-full justify-start">
-                  <Users className="mr-2 h-4 w-4" />
-                  Consumers
-                </Button>
-              </Link>
-              <Link href="/admin/ledger">
-                <Button variant="ghost" className="w-full justify-start">
-                  <ShieldCheck className="mr-2 h-4 w-4" />
+                  <Database className="mr-2 h-4 w-4" />
                   Public Ledger
                 </Button>
               </Link>
@@ -215,21 +185,17 @@ export default function AdminDashboard() {
           </div>
         </nav>
         <div className="border-t p-4">
-  <div className="flex items-center gap-4 mb-4">
-    <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-      {user?.photoURL ? (
-        <img src={user.photoURL} alt="User" className="h-10 w-10 rounded-full" />
-      ) : (
-        <span className="text-sm font-semibold">
-          {user?.displayName?.[0] || user?.email?.[0] || "U"}
-        </span>
-      )}
-    </div>
-    <div>
-      <p className="text-sm font-medium">
-        {user?.displayName || user?.email || "Unknown User"}
-      </p>
-      {/* {!editingLocation ? (
+          <div className="flex items-center gap-4 mb-4">
+            <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+              {user?.photoURL ? (
+                <img src={user.photoURL || "/placeholder.svg"} alt="User" className="h-10 w-10 rounded-full" />
+              ) : (
+                <span className="text-sm font-semibold">{user?.displayName?.[0] || user?.email?.[0] || "U"}</span>
+              )}
+            </div>
+            <div>
+              <p className="text-sm font-medium">{user?.displayName || user?.email || "Unknown User"}</p>
+              {/* {!editingLocation ? (
         <p className="text-xs text-gray-500">
           {location || (
             <button
@@ -257,25 +223,20 @@ export default function AdminDashboard() {
           </button>
         </div>
       )} */}
-    </div>
-  </div>
-  <div className="flex items-center gap-2">
-    <Link href="/consumer/settings">
-      <Button variant="outline" size="sm" className="w-full">
-        <Settings className="mr-2 h-4 w-4" />
-        Settings
-      </Button>
-    </Link>
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={handleLogout}
-      className="text-red-600 hover:bg-red-100"
-    >
-      <LogOut className="h-4 w-4" />
-    </Button>
-  </div>
-</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link href="/consumer/settings">
+              <Button variant="outline" size="sm" className="w-full">
+                <Settings className="mr-2 h-4 w-4" />
+                Settings
+              </Button>
+            </Link>
+            <Button variant="outline" size="sm" onClick={handleLogout} className="text-red-600 hover:bg-red-100">
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </aside>
 
       {/* Main content */}
@@ -284,21 +245,13 @@ export default function AdminDashboard() {
           <Button variant="outline" size="sm" className="mr-4 md:hidden">
             <Building className="h-5 w-5 text-purple-600" />
           </Button>
-          <div className="ml-auto flex items-center gap-4">
-            <Button variant="outline" size="sm">
-              <Bell className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="sm">
-              <User className="h-4 w-4" />
-            </Button>
-          </div>
         </div>
 
         <div className="p-4 md:p-6">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
             <div>
               <h1 className="text-2xl font-bold">Government Admin Dashboard</h1>
-              <p className="text-gray-500">Welcome back, Amit Verma</p>
+              <p className="text-gray-500">Welcome back, Admin</p>
             </div>
             <div className="mt-4 md:mt-0 flex gap-2">
               <Link href="/admin/tenders/new">

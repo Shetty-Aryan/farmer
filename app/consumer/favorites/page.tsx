@@ -29,8 +29,11 @@ import { signOut, getAuth, onAuthStateChanged } from "firebase/auth"
 export default function FavoritesPage() {
   const router = useRouter()
   const { toast } = useToast()
-  const { favorites, removeFromFavorites, addToCart } = useStore()
   const [searchQuery, setSearchQuery] = useState("")
+  const { cart, addToCart, favorites, addToFavorites, removeFromFavorites, isFavorite } = useStore()
+
+  const cartCount = cart.reduce((total, item) => total + item.quantity, 0)
+
 const handleLogout = async () => {
   try {
     await signOut(auth)
@@ -128,7 +131,7 @@ const userId = user?.uid;
                   Discover Products
                 </Button>
               </Link>
-              <Link href="/consumer/orders">
+              <Link href="/consumer/myorders">
                 <Button variant="ghost" className="w-full justify-start">
                   <ShoppingCart className="mr-2 h-4 w-4" />
                   My Orders
@@ -147,29 +150,7 @@ const userId = user?.uid;
               </Link>
             </div>
           </div>
-          <div className="px-4 py-2">
-            <h2 className="mb-2 text-xs font-semibold tracking-tight">Communication</h2>
-            <div className="space-y-1">
-              <Link href="/consumer/messages">
-                <Button variant="ghost" className="w-full justify-start">
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  Messages
-                  <span className="ml-auto bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                    3
-                  </span>
-                </Button>
-              </Link>
-              <Link href="/consumer/notifications">
-                <Button variant="ghost" className="w-full justify-start">
-                  <Bell className="mr-2 h-4 w-4" />
-                  Notifications
-                  <span className="ml-auto bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                    5
-                  </span>
-                </Button>
-              </Link>
-            </div>
-          </div>
+          
         </nav>
         <div className="border-t p-4">
   <div className="flex items-center gap-4 mb-4">
@@ -255,13 +236,17 @@ const userId = user?.uid;
           </div>
           <div className="ml-auto flex items-center gap-4">
             <Link href="/consumer/cart">
-              <Button variant="outline" size="sm">
-                <ShoppingCart className="h-4 w-4" />
-              </Button>
-            </Link>
-            <Button variant="outline" size="sm">
-              <Bell className="h-4 w-4" />
+            <Button variant="outline" size="sm" onClick={() => router.push("/consumer/cart")}>
+              <ShoppingCart className="h-4 w-4" />
+              {cartCount > 0 && (
+                <span className="ml-1 bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                  {cartCount}
+                </span>
+              )}
             </Button>
+            </Link>
+            
+
           </div>
         </div>
 

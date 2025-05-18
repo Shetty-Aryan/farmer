@@ -59,7 +59,7 @@ export default function LoginPage() {
           } else if (role === "customer") {
             router.push("/consumer/dashboard")
           } else if (role === "government") {
-            router.push("/government/dashboard")
+            router.push("/admin/dashboard")
           }
           return
         }
@@ -146,9 +146,9 @@ export default function LoginPage() {
           if (role === "farmer") {
             router.push("/farmer/dashboard")
           } else if (role === "customer") {
-            router.push("/customer/dashboard")
+            router.push("/consumer/dashboard")
           } else if (role === "government") {
-            router.push("/government/dashboard")
+            router.push("/admin/dashboard")
           }
           return
         }
@@ -372,7 +372,7 @@ export default function LoginPage() {
 
         <div className="text-center text-sm text-gray-600">
           Don&apos;t have an account?{" "}
-          <Link href="/auth/register" className="text-black font-medium hover:underline">
+          <Link href="/auth/signup" className="text-black font-medium hover:underline">
             Register
           </Link>
         </div>

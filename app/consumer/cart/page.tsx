@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/components/ui/use-toast"
 import { useStore } from "@/lib/store"
-import { Bell, ChevronLeft, Home, Leaf, LogOut, Minus, Plus, Settings, ShoppingCart, Trash, User } from "lucide-react"
+import { Bell, ChevronLeft, Home, Leaf, LogOut, Minus, Plus, Settings, ShoppingCart, Trash, User } from 'lucide-react'
 import { auth } from "@/lib/firebase"
 import { signOut, getAuth, onAuthStateChanged } from "firebase/auth"
 
@@ -79,18 +79,8 @@ export default function CartPage() {
   }
 
   const handleCheckout = () => {
-    setIsCheckingOut(true)
-
-    // Simulate checkout process
-    setTimeout(() => {
-      clearCart()
-      setIsCheckingOut(false)
-      toast({
-        title: "Order placed successfully!",
-        description: "Your order has been placed and will be processed soon.",
-      })
-      router.push("/consumer/orders")
-    }, 1500)
+    setIsCheckingOut(true);
+    router.push("/consumer/checkout");
   }
 
   return (
@@ -126,7 +116,7 @@ export default function CartPage() {
   <div className="flex items-center gap-4 mb-4">
     <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
       {user?.photoURL ? (
-        <img src={user.photoURL} alt="User" className="h-10 w-10 rounded-full" />
+        <img src={user.photoURL || "/placeholder.svg"} alt="User" className="h-10 w-10 rounded-full" />
       ) : (
         <span className="text-sm font-semibold">
           {user?.displayName?.[0] || user?.email?.[0] || "U"}
@@ -196,9 +186,7 @@ export default function CartPage() {
             <Button variant="outline" size="sm">
               <Bell className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="sm">
-              <User className="h-4 w-4" />
-            </Button>
+            
           </div>
         </div>
 

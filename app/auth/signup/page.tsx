@@ -119,7 +119,7 @@ export default function SignUpPage() {
                 onClick={() => resetForm(r)}
                 className={cn(
                   "px-4 py-2 rounded-md text-sm font-medium transition-all",
-                  role === r ? "bg-black text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200",
+                  role === r ? "bg-black text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 )}
               >
                 {r.charAt(0).toUpperCase() + r.slice(1)}

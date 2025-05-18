@@ -1,5 +1,7 @@
 "use client"
 import { useRouter } from "next/navigation"
+import type React from "react"
+
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -7,23 +9,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  Bell,
-  Calendar,
-  Edit,
-  Filter,
-  Home,
-  Inbox,
-  Leaf,
-  LogOut,
-  Package,
-  Plus,
-  Search,
-  Settings,
-  ShoppingCart,
-  Trash,
-  User,
-} from "lucide-react"
+import { Edit, Filter, Home, Leaf, LogOut, Package, Plus, Search, Settings, ShoppingCart, Trash } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
@@ -36,8 +22,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
-import { auth } from "@/lib/firebase"
+import { auth, db } from "@/lib/firebase"
 import { signOut, getAuth, onAuthStateChanged } from "firebase/auth"
+import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore"
 
 // Sample data
 const products = [
@@ -51,93 +38,274 @@ const products = [
     harvestDate: "2023-05-10",
     location: "Punjab",
     status: "Available",
-    image: "/placeholder.svg?height=200&width=200",
-  },
-  {
-    id: 2,
-    name: "Organic Potatoes",
-    description: "Premium quality potatoes, no pesticides used",
-    price: 30,
-    unit: "kg",
-    quantity: 150,
-    harvestDate: "2023-05-08",
-    location: "Punjab",
-    status: "Available",
-    image: "/placeholder.svg?height=200&width=200",
-  },
-  {
-    id: 3,
-    name: "Fresh Onions",
-    description: "Red onions, perfect for salads and cooking",
-    price: 35,
-    unit: "kg",
-    quantity: 80,
-    harvestDate: "2023-05-12",
-    location: "Punjab",
-    status: "Low Stock",
-    image: "/placeholder.svg?height=200&width=200",
-  },
-  {
-    id: 4,
-    name: "Organic Rice",
-    description: "Basmati rice, grown without chemicals",
-    price: 60,
-    unit: "kg",
-    quantity: 200,
-    harvestDate: "2023-04-20",
-    location: "Punjab",
-    status: "Available",
-    image: "/placeholder.svg?height=200&width=200",
+    farmerName: "Sample Farmer",
+    farmerEmail: "farmer@example.com",
+    image: "/tomato.png?height=200&width=200",
   },
 ]
 
 export default function FarmerProducts() {
-  
   const [searchQuery, setSearchQuery] = useState("")
   const [isAddProductOpen, setIsAddProductOpen] = useState(false)
-  const router = useRouter();
-  
-    const handleLogout = async () => {
-      try {
-        await signOut(auth);
-        router.push("/auth/login"); // Redirect user after logout
-      } catch (error) {
-        console.error("Error signing out:", error);
-        // Optional: Toast or alert
-      }
-    };
-    const useCurrentUser = () => {
-      const [user, setUser] = useState<any>(null);
-      const auth = getAuth();
-    
-      useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-          if (firebaseUser) {
-            setUser({
-              uid: firebaseUser.uid,
-              id: firebaseUser.uid,
-              name: firebaseUser.displayName || null,
-              email: firebaseUser.email || null,
-              image: firebaseUser.photoURL || null,
-            });
-          } else {
-            setUser(null);
-          }
-        });
-    
-        return () => unsubscribe();
-      }, [auth]);
-    
-      return user;
-    };
-    const [activeTab, setActiveTab] = useState("overview")
-    const user = useCurrentUser();
-  
-  const userId = user?.uid;
+  const router = useRouter()
+  // Replace the static products array with a state variable
+  const [productsList, setProductsList] = useState(products)
+  // State for new product form
+  const [newProduct, setNewProduct] = useState({
+    name: "",
+    description: "",
+    price: "",
+    unit: "kg",
+    quantity: "",
+    harvestDate: "",
+    location: "",
+    farmerName: "",
+    farmerEmail: "",
+    image: "/placeholder.svg?height=200&width=200",
+  })
+
+  const [isEditMode, setIsEditMode] = useState(false)
+  const [editProductId, setEditProductId] = useState(null)
+
   
 
+  const handleLogout = async () => {
+    try {
+      await signOut(auth)
+      router.push("/auth/login") // Redirect user after logout
+    } catch (error) {
+      console.error("Error signing out:", error)
+      // Optional: Toast or alert
+    }
+  }
+  const useCurrentUser = () => {
+    const [user, setUser] = useState<any>(null)
+    const auth = getAuth()
+
+    useEffect(() => {
+      const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+        if (firebaseUser) {
+          setUser({
+            uid: firebaseUser.uid,
+            id: firebaseUser.uid,
+            name: firebaseUser.displayName || null,
+            email: firebaseUser.email || null,
+            image: firebaseUser.photoURL || null,
+          })
+        } else {
+          setUser(null)
+        }
+      })
+
+      return () => unsubscribe()
+    }, [auth])
+
+    return user
+  }
+  const [activeTab, setActiveTab] = useState("overview")
+  const user = useCurrentUser()
+
+  const userId = user?.uid
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      if (!userId) return
+      const userRef = doc(db, "users", userId)
+      const userDoc = await getDoc(userRef)
+      if (userDoc.exists()) {
+        const data = userDoc.data()
+        if (data.products) {
+          setProductsList(data.products)
+        }
+      }
+    }
+    fetchProducts()
+  }, [userId])
+  
+
+  // Handle input changes in the new product form
+  const handleInputChange = (e: { target: { id: any; value: any } }) => {
+    const { id, value } = e.target
+    setNewProduct({
+      ...newProduct,
+      [id]: value,
+    })
+  }
+
+  // Handle select changes
+  const handleSelectChange = (value: string, field: string) => {
+    setNewProduct({
+      ...newProduct,
+      [field]: value,
+    })
+  }
+
+  // Handle file input changes
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        setNewProduct({
+          ...newProduct,
+          image: (event.target?.result as string) || "",
+        })
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+  // Handle form submission
+  const handleAddProduct = async () => {
+    if (!userId) return
+  
+    const userRef = doc(db, "users", userId)
+    const userDoc = await getDoc(userRef)
+  
+    let updatedProducts: any[] = []
+  
+    if (isEditMode && editProductId !== null) {
+      updatedProducts = productsList.map((product) => {
+        if (product.id === editProductId) {
+          return {
+            ...product,
+            name: newProduct.name,
+            description: newProduct.description,
+            price: Number.parseFloat(newProduct.price) || 0,
+            unit: newProduct.unit,
+            quantity: Number.parseInt(newProduct.quantity) || 0,
+            harvestDate: newProduct.harvestDate,
+            location: newProduct.location,
+            farmerEmail: user?.email || "No Email",
+            status: Number.parseInt(newProduct.quantity) > 50 ? "Available" : "Low Stock",
+            image: newProduct.image || product.image,
+          }
+        }
+        return product
+      })
+  
+      await updateDoc(userRef, { products: updatedProducts })
+      setProductsList(updatedProducts)
+      setIsEditMode(false)
+      setEditProductId(null)
+    } else {
+      const newProductData = {
+        id: productsList.length + 1,
+        name: newProduct.name,
+        description: newProduct.description,
+        price: Number.parseFloat(newProduct.price) || 0,
+        unit: newProduct.unit,
+        quantity: Number.parseInt(newProduct.quantity) || 0,
+        harvestDate: newProduct.harvestDate,
+        location: newProduct.location,
+        farmerName: user?.name || "Unknown Farmer",
+        farmerEmail: user?.email || "No Email",
+        status: Number.parseInt(newProduct.quantity) > 50 ? "Available" : "Low Stock",
+        image: newProduct.image,
+      }
+  
+      updatedProducts = [...productsList, newProductData]
+      if (userDoc.exists()) {
+        await updateDoc(userRef, { products: updatedProducts })
+      } else {
+        await setDoc(userRef, { products: updatedProducts })
+      }
+  
+      setProductsList(updatedProducts)
+    }
+  
+    setNewProduct({
+      name: "",
+      description: "",
+      price: "",
+      unit: "kg",
+      quantity: "",
+      harvestDate: "",
+      location: "",
+      farmerName: "",
+      farmerEmail: "",
+      image: "/placeholder.svg?height=200&width=200",
+    })
+  
+    setIsAddProductOpen(false)
+  }
+
+  const handleDeleteProduct = async (productId: number) => {
+    if (!userId) return; // safety check
+  
+    try {
+      const userRef = doc(db, "users", userId);
+  
+      // Filter out the product to delete
+      const updatedProducts = productsList.filter(p => p.id !== productId);
+  
+      // Update Firestore
+      await updateDoc(userRef, { products: updatedProducts });
+  
+      // Update local state
+      setProductsList(updatedProducts);
+
+      window.location.reload()
+  
+    } catch (error) {
+      console.error("Error deleting product: ", error);
+    }
+  };
+  
+
+  // Handle edit product
+  const handleEditProduct = (product: {
+    id: any
+    name: any
+    description: any
+    price: any
+    unit: any
+    quantity: any
+    harvestDate: any
+    location: any
+    status?: string
+    image: any
+    farmerName?: string
+    farmerEmail?: string
+  }) => {
+    setIsEditMode(true)
+    setEditProductId(product.id)
+    setNewProduct({
+      name: product.name,
+      description: product.description,
+      price: product.price.toString(),
+      unit: product.unit,
+      quantity: product.quantity.toString(),
+      harvestDate: product.harvestDate,
+      location: product.location,
+      farmerName: product.farmerName || "",
+      farmerEmail: product.farmerEmail || "",
+      image: product.image,
+    })
+    setIsAddProductOpen(true)
+  }
+
+  const handleDialogOpenChange = (open: boolean | ((prevState: boolean) => boolean)) => {
+    setIsAddProductOpen(open)
+    if (!open) {
+      setIsEditMode(false)
+      setEditProductId(null)
+      setNewProduct({
+        name: "",
+        description: "",
+        price: "",
+        unit: "kg",
+        quantity: "",
+        harvestDate: "",
+        location: "",
+        farmerName: "",
+        farmerEmail: "",
+        image: "/placeholder.svg?height=200&width=200",
+      })
+    }
+  }
+
   // Filter products based on search query and active tab
-  const filteredProducts = products.filter((product) => {
+  const filteredProducts = productsList.filter((product) => {
     const matchesSearch =
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.description.toLowerCase().includes(searchQuery.toLowerCase())
@@ -183,52 +351,19 @@ export default function FarmerProducts() {
               </Link>
             </div>
           </div>
-          <div className="px-4 py-2">
-            <h2 className="mb-2 text-xs font-semibold tracking-tight">Communication</h2>
-            <div className="space-y-1">
-              <Link href="/farmer/messages">
-                <Button variant="ghost" className="w-full justify-start">
-                  <Inbox className="mr-2 h-4 w-4" />
-                  Messages
-                  <span className="ml-auto bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                    3
-                  </span>
-                </Button>
-              </Link>
-              <Link href="/farmer/calendar">
-                <Button variant="ghost" className="w-full justify-start">
-                  <Calendar className="mr-2 h-4 w-4" />
-                  Calendar
-                </Button>
-              </Link>
-              <Link href="/farmer/notifications">
-                <Button variant="ghost" className="w-full justify-start">
-                  <Bell className="mr-2 h-4 w-4" />
-                  Notifications
-                  <span className="ml-auto bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                    5
-                  </span>
-                </Button>
-              </Link>
-            </div>
-          </div>
         </nav>
         <div className="border-t p-4">
-  <div className="flex items-center gap-4 mb-4">
-    <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-      {user?.photoURL ? (
-        <img src={user.photoURL} alt="User" className="h-10 w-10 rounded-full" />
-      ) : (
-        <span className="text-sm font-semibold">
-          {user?.displayName?.[0] || user?.email?.[0] || "U"}
-        </span>
-      )}
-    </div>
-    <div>
-      <p className="text-sm font-medium">
-        {user?.displayName || user?.email || "Unknown User"}
-      </p>
-      {/* {!editingLocation ? (
+          <div className="flex items-center gap-4 mb-4">
+            <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+              {user?.photoURL ? (
+                <img src={user.photoURL || "/placeholder.svg"} alt="User" className="h-10 w-10 rounded-full" />
+              ) : (
+                <span className="text-sm font-semibold">{user?.displayName?.[0] || user?.email?.[0] || "U"}</span>
+              )}
+            </div>
+            <div>
+              <p className="text-sm font-medium">{user?.displayName || user?.email || "Unknown User"}</p>
+              {/* {!editingLocation ? (
         <p className="text-xs text-gray-500">
           {location || (
             <button
@@ -256,25 +391,20 @@ export default function FarmerProducts() {
           </button>
         </div>
       )} */}
-    </div>
-  </div>
-  <div className="flex items-center gap-2">
-    <Link href="/consumer/settings">
-      <Button variant="outline" size="sm" className="w-full">
-        <Settings className="mr-2 h-4 w-4" />
-        Settings
-      </Button>
-    </Link>
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={handleLogout}
-      className="text-red-600 hover:bg-red-100"
-    >
-      <LogOut className="h-4 w-4" />
-    </Button>
-  </div>
-</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link href="/consumer/settings">
+              <Button variant="outline" size="sm" className="w-full">
+                <Settings className="mr-2 h-4 w-4" />
+                Settings
+              </Button>
+            </Link>
+            <Button variant="outline" size="sm" onClick={handleLogout} className="text-red-600 hover:bg-red-100">
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </aside>
 
       {/* Main content */}
@@ -283,14 +413,6 @@ export default function FarmerProducts() {
           <Button variant="outline" size="sm" className="mr-4 md:hidden">
             <Leaf className="h-5 w-5 text-green-600" />
           </Button>
-          <div className="ml-auto flex items-center gap-4">
-            <Button variant="outline" size="sm">
-              <Bell className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="sm">
-              <User className="h-4 w-4" />
-            </Button>
-          </div>
         </div>
 
         <div className="p-4 md:p-6">
@@ -300,7 +422,7 @@ export default function FarmerProducts() {
               <p className="text-gray-500">Manage your product listings</p>
             </div>
             <div className="mt-4 md:mt-0">
-              <Dialog open={isAddProductOpen} onOpenChange={setIsAddProductOpen}>
+              <Dialog open={isAddProductOpen} onOpenChange={handleDialogOpenChange}>
                 <DialogTrigger asChild>
                   <Button>
                     <Plus className="mr-2 h-4 w-4" />
@@ -309,7 +431,7 @@ export default function FarmerProducts() {
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[500px]">
                   <DialogHeader>
-                    <DialogTitle>Add New Product</DialogTitle>
+                    <DialogTitle>{isEditMode ? "Edit Product" : "Add New Product"}</DialogTitle>
                     <DialogDescription>Enter the details of your new product listing.</DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
@@ -317,25 +439,44 @@ export default function FarmerProducts() {
                       <Label htmlFor="name" className="text-right">
                         Name
                       </Label>
-                      <Input id="name" placeholder="Product name" className="col-span-3" />
+                      <Input
+                        id="name"
+                        placeholder="Product name"
+                        className="col-span-3"
+                        value={newProduct.name}
+                        onChange={handleInputChange}
+                      />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="description" className="text-right">
                         Description
                       </Label>
-                      <Textarea id="description" placeholder="Product description" className="col-span-3" />
+                      <Textarea
+                        id="description"
+                        placeholder="Product description"
+                        className="col-span-3"
+                        value={newProduct.description}
+                        onChange={handleInputChange}
+                      />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="price" className="text-right">
                         Price
                       </Label>
-                      <Input id="price" type="number" placeholder="Price per unit" className="col-span-3" />
+                      <Input
+                        id="price"
+                        type="number"
+                        placeholder="Price per unit"
+                        className="col-span-3"
+                        value={newProduct.price}
+                        onChange={handleInputChange}
+                      />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="unit" className="text-right">
                         Unit
                       </Label>
-                      <Select>
+                      <Select value={newProduct.unit} onValueChange={(value) => handleSelectChange(value, "unit")}>
                         <SelectTrigger className="col-span-3">
                           <SelectValue placeholder="Select unit" />
                         </SelectTrigger>
@@ -351,30 +492,82 @@ export default function FarmerProducts() {
                       <Label htmlFor="quantity" className="text-right">
                         Quantity
                       </Label>
-                      <Input id="quantity" type="number" placeholder="Available quantity" className="col-span-3" />
+                      <Input
+                        id="quantity"
+                        type="number"
+                        placeholder="Available quantity"
+                        className="col-span-3"
+                        value={newProduct.quantity}
+                        onChange={handleInputChange}
+                      />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="harvestDate" className="text-right">
                         Harvest Date
                       </Label>
-                      <Input id="harvestDate" type="date" className="col-span-3" />
+                      <Input
+                        id="harvestDate"
+                        type="date"
+                        className="col-span-3"
+                        value={newProduct.harvestDate}
+                        onChange={handleInputChange}
+                      />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="location" className="text-right">
                         Location
                       </Label>
-                      <Input id="location" placeholder="Farm location" className="col-span-3" />
+                      <Input
+                        id="location"
+                        placeholder="Farm location"
+                        className="col-span-3"
+                        value={newProduct.location}
+                        onChange={handleInputChange}
+                      />
                     </div>
+                    {/* <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="farmerName" className="text-right">
+                        Farmer Name
+                      </Label>
+                      <Input
+                        id="farmerName"
+                        placeholder="Your name or email"
+                        className="col-span-3"
+                        value={newProduct.farmerName}
+                        onChange={handleInputChange}
+                      />
+                    </div> */}
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="image" className="text-right">
                         Image
                       </Label>
-                      <Input id="image" type="file" className="col-span-3" />
+                      <Input
+                        id="image"
+                        type="file"
+                        accept="image/*"
+                        className="col-span-3"
+                        onChange={handleFileChange}
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <div className="text-right"></div>
+                      <div className="col-span-3">
+                        {newProduct.image && (
+                          <div className="mt-2">
+                            <p className="text-sm text-gray-500 mb-1">Image Preview:</p>
+                            <img
+                              src={newProduct.image || "/placeholder.svg"}
+                              alt="Preview"
+                              className="h-32 w-32 object-cover rounded border"
+                            />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button type="submit" onClick={() => setIsAddProductOpen(false)}>
-                      Add Product
+                    <Button type="button" onClick={handleAddProduct}>
+                      {isEditMode ? "Update Product" : "Add Product"}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -414,7 +607,7 @@ export default function FarmerProducts() {
                 <CardHeader className="p-0">
                   <div className="relative">
                     <img
-                      src={product.image || "/placeholder.svg"}
+                      src={product.image || "/placeholder.svg?height=200&width=200"}
                       alt={product.name}
                       className="w-full h-48 object-cover rounded-t-lg"
                     />
@@ -453,17 +646,33 @@ export default function FarmerProducts() {
                       <span className="text-sm text-gray-500">Location:</span>
                       <span className="font-medium">{product.location}</span>
                     </div>
+                    {/* <div className="flex justify-between">
+                      <span className="text-sm text-gray-500">Farmer:</span>
+                      <span className="font-medium">{product.farmerName || user?.displayName || "Unknown Farmer"}</span>
+                    </div> */}
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-500">Contact:</span>
+                      <span className="font-medium text-xs truncate">
+                        {product.farmerEmail || user?.email || "No Email"}
+                      </span>
+                    </div>
                   </div>
                 </CardContent>
                 <CardFooter className="flex justify-between p-4 pt-0">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={() => handleEditProduct(product)}>
                     <Edit className="h-4 w-4 mr-2" />
                     Edit
                   </Button>
-                  <Button variant="outline" size="sm" className="text-red-500 hover:text-red-700">
-                    <Trash className="h-4 w-4 mr-2" />
-                    Delete
-                  </Button>
+                  <Button
+  variant="outline"
+  size="sm"
+  className="text-red-500 hover:text-red-700"
+  onClick={() => handleDeleteProduct(product.id)} // pass product.id here
+>
+  <Trash className="h-4 w-4 mr-2" />
+  Delete
+</Button>
+
                 </CardFooter>
               </Card>
             ))}

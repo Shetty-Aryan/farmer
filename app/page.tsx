@@ -62,7 +62,7 @@ export default function Home() {
               </div>
               <div className="flex justify-center">
                 <img
-                  src="/placeholder.svg?height=400&width=600"
+                  src="/farmers.jpg?height=400&width=600"
                   alt="Farmer to Consumer Platform"
                   className="rounded-lg object-cover"
                   width={600}
@@ -132,7 +132,7 @@ export default function Home() {
                 <div className="grid gap-6 md:grid-cols-2 md:gap-12 items-center">
                   <div>
                     <img
-                      src="/placeholder.svg?height=300&width=400"
+                      src="/indian-farmer.jpg?height=300&width=400"
                       alt="Farmer Dashboard"
                       className="rounded-lg object-cover"
                       width={400}
@@ -226,7 +226,7 @@ export default function Home() {
                 <div className="grid gap-6 md:grid-cols-2 md:gap-12 items-center">
                   <div>
                     <img
-                      src="/placeholder.svg?height=300&width=400"
+                      src="/customer.jpg?height=300&width=400"
                       alt="Consumer Dashboard"
                       className="rounded-lg object-cover"
                       width={400}
@@ -320,7 +320,7 @@ export default function Home() {
                 <div className="grid gap-6 md:grid-cols-2 md:gap-12 items-center">
                   <div>
                     <img
-                      src="/placeholder.svg?height=300&width=400"
+                      src="/admin.jpg?height=300&width=400"
                       alt="Government Dashboard"
                       className="rounded-lg object-cover"
                       width={400}

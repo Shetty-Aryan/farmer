@@ -153,14 +153,11 @@ const userId = user?.uid;
                   Orders
                 </Button>
               </Link>
-              <Link href="/farmer/procurement">
-                <Button variant="ghost" className="w-full justify-start">
-                  <BarChart3 className="mr-2 h-4 w-4" />
-                  Gov. Procurement
-                </Button>
-              </Link>
+              
             </div>
+            
           </div>
+          
         </nav>
         <div className="border-t p-4">
   <div className="flex items-center gap-4 mb-4">
@@ -234,12 +231,8 @@ const userId = user?.uid;
             <Leaf className="h-5 w-5 text-green-600" />
           </Button>
           <div className="ml-auto flex items-center gap-4">
-            <Button variant="outline" size="sm">
-              <Bell className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="sm">
-              <User className="h-4 w-4" />
-            </Button>
+
+            
           </div>
         </div>
 
@@ -247,13 +240,9 @@ const userId = user?.uid;
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
             <div>
               <h1 className="text-2xl font-bold">Farmer Dashboard</h1>
-              <p className="text-gray-500">Welcome back, Rajesh Kumar</p>
+              <p className="text-gray-500">Welcome back, Producer</p>
             </div>
-            <div className="mt-4 md:mt-0 flex gap-2">
-              <Link href="/farmer/products/new">
-                <Button>Add New Product</Button>
-              </Link>
-            </div>
+            
           </div>
 
           <div className="grid gap-4 md:grid-cols-3 mb-6">

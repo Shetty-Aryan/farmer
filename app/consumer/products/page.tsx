@@ -44,7 +44,7 @@ const products = [
     rating: 4.5,
     category: "Vegetables",
     freshness: "1 day ago",
-    image: "/placeholder.svg?height=200&width=200",
+    image: "/tomato.png?height=200&width=200",
   },
   {
     id: 2,
@@ -57,7 +57,7 @@ const products = [
     rating: 4.2,
     category: "Vegetables",
     freshness: "2 days ago",
-    image: "/placeholder.svg?height=200&width=200",
+    image: "/potato.png?height=200&width=200",
   },
   {
     id: 3,
@@ -70,7 +70,7 @@ const products = [
     rating: 4.0,
     category: "Vegetables",
     freshness: "1 day ago",
-    image: "/placeholder.svg?height=200&width=200",
+    image: "/onions.png?height=200&width=200",
   },
   {
     id: 4,
@@ -83,20 +83,20 @@ const products = [
     rating: 4.8,
     category: "Grains",
     freshness: "10 days ago",
-    image: "/placeholder.svg?height=200&width=200",
+    image: "/rice.png?height=200&width=200",
   },
   {
     id: 5,
-    name: "Fresh Apples",
-    farmer: "Amit Kumar",
-    location: "Himachal Pradesh",
-    distance: 20,
+    name: "Carrots",
+    farmer: "Rajesh Kumar",
+    location: "punjab",
+    distance: 5,
     price: 80,
     unit: "kg",
     rating: 4.6,
-    category: "Fruits",
+    category: "vegetables",
     freshness: "3 days ago",
-    image: "/placeholder.svg?height=200&width=200",
+    image: "/carrot.png?height=200&width=200",
   },
   {
     id: 6,
@@ -109,7 +109,7 @@ const products = [
     rating: 4.3,
     category: "Grains",
     freshness: "15 days ago",
-    image: "/placeholder.svg?height=200&width=200",
+    image: "/download.png?height=200&width=200",
   },
   {
     id: 7,
@@ -122,7 +122,7 @@ const products = [
     rating: 4.9,
     category: "Fruits",
     freshness: "1 day ago",
-    image: "/placeholder.svg?height=200&width=200",
+    image: "/mangoes.png?height=200&width=200",
   },
   {
     id: 8,
@@ -135,7 +135,7 @@ const products = [
     rating: 4.7,
     category: "Dairy",
     freshness: "Today",
-    image: "/placeholder.svg?height=200&width=200",
+    image: "/milk.png?height=200&width=200",
   },
 ]
 
@@ -186,7 +186,12 @@ export default function ConsumerProducts() {
   const user = useCurrentUser();
   
   const userId = user?.uid;
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<{
+    categories: string[]
+    maxDistance: number
+    priceRange: [number, number]
+    minRating: number
+  }>({
     categories: [],
     maxDistance: 50,
     priceRange: [0, 200],
@@ -234,12 +239,13 @@ export default function ConsumerProducts() {
       if (sortBy === "freshness") {
         // Simple sorting for freshness (in a real app, you'd use actual dates)
         const freshnessOrder = { Today: 0, "1 day ago": 1, "2 days ago": 2, "3 days ago": 3 }
-        return (freshnessOrder[a.freshness] || 999) - (freshnessOrder[b.freshness] || 999)
+        return ((freshnessOrder[a.freshness as keyof typeof freshnessOrder] ?? 999) -
+                (freshnessOrder[b.freshness as keyof typeof freshnessOrder] ?? 999))
       }
       return 0
     })
 
-  const toggleCategory = (category) => {
+  const toggleCategory = (category: string) => {
     setFilters((prev) => {
       const categories = prev.categories.includes(category)
         ? prev.categories.filter((c) => c !== category)
@@ -249,7 +255,7 @@ export default function ConsumerProducts() {
     })
   }
 
-  const handleAddToCart = (product) => {
+  const handleAddToCart = (product: { id: any; name: any; farmer: any; location?: string; distance?: number; price: any; unit: any; rating?: number; category?: string; freshness?: string; image: any }) => {
     const cartItem: CartItem = {
       id: product.id,
       name: product.name,
@@ -267,7 +273,7 @@ export default function ConsumerProducts() {
     })
   }
 
-  const handleToggleFavorite = (product) => {
+  const handleToggleFavorite = (product: { id: any; name: any; farmer: any; location: any; distance?: number; price: any; unit: any; rating?: number; category?: string; freshness?: string; image: any }) => {
     const favoriteItem: FavoriteItem = {
       id: product.id,
       name: product.name,
@@ -319,7 +325,7 @@ export default function ConsumerProducts() {
                   Discover Products
                 </Button>
               </Link>
-              <Link href="/consumer/orders">
+              <Link href="/consumer/myorders">
                 <Button variant="ghost" className="w-full justify-start">
                   <ShoppingCart className="mr-2 h-4 w-4" />
                   My Orders
@@ -341,29 +347,7 @@ export default function ConsumerProducts() {
               </Link>
             </div>
           </div>
-          <div className="px-4 py-2">
-            <h2 className="mb-2 text-xs font-semibold tracking-tight">Communication</h2>
-            <div className="space-y-1">
-              <Link href="/consumer/messages">
-                <Button variant="ghost" className="w-full justify-start">
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  Messages
-                  <span className="ml-auto bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                    3
-                  </span>
-                </Button>
-              </Link>
-              <Link href="/consumer/notifications">
-                <Button variant="ghost" className="w-full justify-start">
-                  <Bell className="mr-2 h-4 w-4" />
-                  Notifications
-                  <span className="ml-auto bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                    5
-                  </span>
-                </Button>
-              </Link>
-            </div>
-          </div>
+          
         </nav>
         <div className="border-t p-4">
   <div className="flex items-center gap-4 mb-4">
@@ -459,9 +443,7 @@ export default function ConsumerProducts() {
                 </span>
               )}
             </Button>
-            <Button variant="outline" size="sm">
-              <Bell className="h-4 w-4" />
-            </Button>
+            
           </div>
         </div>
 
@@ -575,7 +557,7 @@ export default function ConsumerProducts() {
                         min={0}
                         max={200}
                         step={5}
-                        onValueChange={(value) => setFilters((prev) => ({ ...prev, priceRange: value }))}
+                        onValueChange={(value: [number, number]) => setFilters((prev) => ({ ...prev, priceRange: value }))}
                       />
                     </div>
 

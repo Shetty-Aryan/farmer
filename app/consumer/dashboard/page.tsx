@@ -25,7 +25,7 @@ import {
 } from "lucide-react"
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth"
 import { auth } from "@/lib/firebase"
-
+import { useStore, type CartItem, type FavoriteItem } from "@/lib/store"
 // Sample data
 const nearbyProducts = [
   {
@@ -98,11 +98,11 @@ const recentOrders = [
 ]
 
 
-
 export default function ConsumerDashboard() {
+  const { cart, addToCart, favorites, addToFavorites, removeFromFavorites, isFavorite } = useStore()
   const [activeTab, setActiveTab] = useState("discover")
   const router = useRouter()
-
+  const cartCount = cart.reduce((total, item) => total + item.quantity, 0)
 const handleLogout = async () => {
   try {
     await signOut(auth)
@@ -138,6 +138,7 @@ const useCurrentUser = () => {
 };
 
 const user = useCurrentUser();
+const name = user?.name || "User";
 
 const userId = user?.uid;
 
@@ -161,12 +162,12 @@ const userId = user?.uid;
                   Dashboard
                 </Button>
               </Link>
-              {/* <Link href="/consumer/discover">
-                <Button variant="ghost" className="w-full justify-start">
+              <Link href="/consumer/products">
+                <Button variant="secondary" className="w-full justify-start">
                   <Search className="mr-2 h-4 w-4" />
                   Discover Products
                 </Button>
-              </Link> */}
+              </Link>
               <Link href="/consumer/cart">
                 <Button variant="ghost" className="w-full justify-start">
                   <ShoppingCart className="mr-2 h-4 w-4" />
@@ -175,36 +176,19 @@ const userId = user?.uid;
               </Link>
 
               <Link href="/consumer/favorites">
-                <Button variant="ghost" className="w-full justify-start">
+                <Button variant="secondary" className="w-full justify-start">
                   <Heart className="mr-2 h-4 w-4" />
                   Favorites
+                  {favorites.length > 0 && (
+                    <span className="ml-auto bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                      {favorites.length}
+                    </span>
+                  )}
                 </Button>
               </Link>
             </div>
           </div>
-          <div className="px-4 py-2">
-            <h2 className="mb-2 text-xs font-semibold tracking-tight">Communication</h2>
-            <div className="space-y-1">
-              <Link href="/consumer/messages">
-                <Button variant="ghost" className="w-full justify-start">
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  Messages
-                  <span className="ml-auto bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                    3
-                  </span>
-                </Button>
-              </Link>
-              <Link href="/consumer/notifications">
-                <Button variant="ghost" className="w-full justify-start">
-                  <Bell className="mr-2 h-4 w-4" />
-                  Notifications
-                  <span className="ml-auto bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                    5
-                  </span>
-                </Button>
-              </Link>
-            </div>
-          </div>
+          
         </nav>
         <div className="border-t p-4">
   <div className="flex items-center gap-4 mb-4">
@@ -278,100 +262,38 @@ const userId = user?.uid;
           <Button variant="outline" size="sm" className="mr-4 md:hidden">
             <Leaf className="h-5 w-5 text-green-600" />
           </Button>
-          <div className="relative w-full max-w-md">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-            <Input
-              type="search"
-              placeholder="Search for products, farmers..."
-              className="w-full bg-gray-100 pl-8 focus-visible:ring-green-500"
-            />
-          </div>
+          
           <div className="ml-auto flex items-center gap-4">
             <Button variant="outline" size="sm">
               <MapPin className="h-4 w-4 mr-2" />
               Delhi
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => router.push("/consumer/cart")}>
               <ShoppingCart className="h-4 w-4" />
+              {cartCount > 0 && (
+                <span className="ml-1 bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                  {cartCount}
+                </span>
+              )}
             </Button>
-            <Button variant="outline" size="sm">
-              <Bell className="h-4 w-4" />
-            </Button>
+            
           </div>
         </div>
 
         <div className="p-4 md:p-6">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
             <div>
-              <h1 className="text-2xl font-bold">Welcome, Priya</h1>
+              <h1 className="text-2xl font-bold">Welcome, {name}</h1>
               <p className="text-gray-500">Discover fresh produce directly from farmers near you</p>
             </div>
           </div>
 
-          <Tabs defaultValue="discover" className="mb-6" onValueChange={setActiveTab}>
+          <Tabs defaultValue="orders" className="mb-6" onValueChange={setActiveTab}>
             <TabsList>
-              <TabsTrigger value="discover">Discover</TabsTrigger>
+              
               <TabsTrigger value="orders">My Orders</TabsTrigger>
               <TabsTrigger value="farmers">Favorite Farmers</TabsTrigger>
             </TabsList>
-
-            <TabsContent value="discover" className="space-y-4">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
-                <h2 className="text-xl font-semibold">Products Near You</h2>
-                <Button variant="outline" size="sm">
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filter
-                </Button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {nearbyProducts.map((product) => (
-                  <Card key={product.id} className="overflow-hidden">
-                    <div className="relative">
-                      <img
-                        src={product.image || "/placeholder.svg"}
-                        alt={product.name}
-                        className="w-full h-48 object-cover"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute top-2 right-2 bg-white rounded-full h-8 w-8 shadow-sm hover:bg-white"
-                      >
-                        <Heart className="h-4 w-4" />
-                      </Button>
-                      <div className="absolute bottom-2 left-2">
-                        <Badge className="bg-green-500 hover:bg-green-600">
-                          <MapPin className="h-3 w-3 mr-1" />
-                          {product.distance}
-                        </Badge>
-                      </div>
-                    </div>
-                    <CardContent className="p-4">
-                      <h3 className="font-semibold text-lg">{product.name}</h3>
-                      <div className="flex items-center gap-1 text-sm text-gray-500 mb-2">
-                        <span>by {product.farmer}</span>
-                        <span>•</span>
-                        <span>{product.location}</span>
-                      </div>
-                      <div className="flex items-center gap-1 mb-2">
-                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                        <span className="text-sm font-medium">{product.rating}</span>
-                      </div>
-                      <div className="flex justify-between items-center mt-2">
-                        <span className="font-bold text-lg">{product.price}</span>
-                        <Button size="sm">Add to Cart</Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
-              <div className="flex justify-center mt-6">
-                <Button variant="outline">Load More</Button>
-              </div>
-            </TabsContent>
-
             <TabsContent value="orders" className="space-y-4">
               <Card>
                 <CardHeader>
@@ -424,9 +346,11 @@ const userId = user?.uid;
                   </div>
                 </CardContent>
                 <CardFooter>
+                  <Link href={"/consumer/myorders"}>
                   <Button variant="outline" className="w-full">
                     View All Orders
                   </Button>
+                  </Link>
                 </CardFooter>
               </Card>
             </TabsContent>

@@ -303,29 +303,7 @@ export default function TendersPage() {
               </Link>
             </div>
           </div>
-          <div className="px-4 py-2">
-            <h2 className="mb-2 text-xs font-semibold tracking-tight">Management</h2>
-            <div className="space-y-1">
-              <Link href="/admin/farmers">
-                <Button variant="ghost" className="w-full justify-start">
-                  <Leaf className="mr-2 h-4 w-4" />
-                  Farmers
-                </Button>
-              </Link>
-              <Link href="/admin/consumers">
-                <Button variant="ghost" className="w-full justify-start">
-                  <Users className="mr-2 h-4 w-4" />
-                  Consumers
-                </Button>
-              </Link>
-              <Link href="/admin/ledger">
-                <Button variant="ghost" className="w-full justify-start">
-                  <ShieldCheck className="mr-2 h-4 w-4" />
-                  Public Ledger
-                </Button>
-              </Link>
-            </div>
-          </div>
+          
         </nav>
         <div className="border-t p-4">
   <div className="flex items-center gap-4 mb-4">
@@ -397,14 +375,7 @@ export default function TendersPage() {
           <Button variant="outline" size="sm" className="mr-4 md:hidden">
             <Building className="h-5 w-5 text-purple-600" />
           </Button>
-          <div className="ml-auto flex items-center gap-4">
-            <Button variant="outline" size="sm">
-              <Bell className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="sm">
-              <User className="h-4 w-4" />
-            </Button>
-          </div>
+          
         </div>
 
         <div className="p-4 md:p-6">
